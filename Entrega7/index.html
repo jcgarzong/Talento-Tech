@@ -3,46 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chainlink Functions</title>
+    <title>Interfaz Contrato Inteligente</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"
+	<script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"
         type="application/javascript"></script>
 </head>
-<body class="bg-blue-400 h-screen flex flex-col items-center justify-center">
+<body class="bg-blue-300 h-screen flex items-center justify-center">
 
     <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 class="text-2xl font-bold mb-4 text-center">Chainlink Functions</h1>
+        <h1 class="text-2xl font-bold mb-4">Conectar a MetaMask</h1>
 
-        <button id="connectButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4">
-            Connect Wallet
+        <button id="connectButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Conectar Billetera
         </button>
 
-        <div>
+        <div id="walletAddress" class="mt-4 text-gray-700"></div>
+        <div id="tokenBalance" class="mt-2 text-gray-700"></div>
+
+        <div class="mt-6">
             <label for="subscriptionId" class="block text-gray-700 text-sm font-bold mb-2">Subscription ID:</label>
-            <input type="text" id="subscriptionId" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Enter your Subscription ID">
+            <input type="text" id="subscriptionId" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
         </div>
 
         <div class="mt-4">
-            <label for="args" class="block text-gray-700 text-sm font-bold mb-2">Args (JSON Array):</label>
-            <input type="text" id="args" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="e.g., ['arg1', 'arg2']">
+            <label for="args" class="block text-gray-700 text-sm font-bold mb-2">Args (separados por coma):</label>
+            <input type="text" id="args" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
         </div>
 
-        <button id="sendButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mt-4">
-            Send Request
+        <button id="sendButton" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Enviar Solicitud
         </button>
 
-        <div id="result" class="mt-4 text-center"></div>
-    </div>
+        <button id="queryButton" class="mt-4 bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+            Consultar Departamento
+        </button>
 
-    <script>
-        const connectButton = document.getElementById('connectButton');
-        const sendButton = document.getElementById('sendButton');
-        const subscriptionIdInput = document.getElementById('subscriptionId');
-        const argsInput = document.getElementById('args');
-        const resultDiv = document.getElementById('result');
+        <div id="departmentResult" class="mt-4 text-gray-700"></div>
 
-        const contractAddress = '0xA1063919D21B0C311548A1Edf141A78eE429618f';
-        const contractABI = [
+        <script>
+            const connectButton = document.getElementById('connectButton');
+            const walletAddress = document.getElementById('walletAddress');
+            const tokenBalance = document.getElementById('tokenBalance');
+            const subscriptionIdInput = document.getElementById('subscriptionId');
+            const argsInput = document.getElementById('args');
+            const sendButton = document.getElementById('sendButton');
+            const queryButton = document.getElementById('queryButton');
+            const departmentResult = document.getElementById('departmentResult');
+
+            const contractAddress = '0x8144e195b885f09510a63328Fc674B5A67a79e23';
+            const contractABI = [
 	{
 		"inputs": [],
 		"stateMutability": "nonpayable",
@@ -188,48 +197,89 @@
 	}
 ];
 
-        let provider, signer, contract;
+            let provider, signer, contract;
 
-        connectButton.addEventListener('click', async () => {
-            if (typeof window.ethereum !== 'undefined') {
-                try {
-                    await window.ethereum.request({ method: 'eth_requestAccounts' });
-                    provider = new ethers.providers.Web3Provider(window.ethereum);
-                    signer = provider.getSigner();
-                    contract = new ethers.Contract(contractAddress, contractABI, signer);
-                    connectButton.textContent = 'Connected';
-                } catch (error) {
-                    console.error(error);
-                    resultDiv.textContent = 'Error connecting to MetaMask';
+            connectButton.addEventListener('click', async () => {
+                if (window.ethereum) {
+                    try {
+                        // Solicitar acceso a la cuenta
+                        await window.ethereum.request({ method: 'eth_requestAccounts' });
+                        provider = new ethers.providers.Web3Provider(window.ethereum);
+                        signer = provider.getSigner();
+                        contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+                        const accounts = await provider.send("eth_accounts", []);
+                        walletAddress.textContent = `Dirección de la billetera: ${accounts[0]}`;
+
+                        // Obtener balance de LINK (asumiendo que es un token ERC-20)
+                        // Reemplaza con la dirección del contrato de LINK si es diferente
+                        const linkContractAddress = '0x514910771AF9Ca656af840dff83E8264EcF986CA'; // Dirección del contrato de LINK
+                        const linkContractABI = [
+                            // ABI del contrato de LINK
+                            {
+                                "constant": true,
+                                "inputs": [
+                                    {
+                                        "name": "_owner",
+                                        "type": "address"
+                                    }
+                                ],
+                                "name": "balanceOf",
+                                "outputs": [
+                                    {
+                                        "name": "balance",
+                                        "type": "uint256"
+                                    }
+                                ],
+                                "payable": false,
+                                "stateMutability": "view",
+                                "type": "function"
+                            }
+                        ];
+                        const linkContract = new ethers.Contract(linkContractAddress, linkContractABI, provider);
+                        const balance = await linkContract.balanceOf(accounts[0]);
+                        tokenBalance.textContent = `Balance de LINK: ${ethers.utils.formatEther(balance)}`;
+                    } catch (error) {
+                        console.error(error);
+                        alert('Error al conectar a MetaMask');
+                    }
+                } else {
+                    alert('MetaMask no está instalado');
                 }
-            } else {
-                resultDiv.textContent = 'MetaMask not detected';
-            }
-        });
+            });
 
-        sendButton.addEventListener('click', async () => {
-            if (contract) {
-                try {
-                    const subscriptionId = subscriptionIdInput.value;
-                    const args = JSON.parse(argsInput.value);
-                    const tx = await contract.enviarSolicitud(subscriptionId, args);
-                    resultDiv.textContent = 'Transaction sent: ' + tx.hash;
-                    await tx.wait();
-                    // Escuchar el evento Respuesta para obtener el resultado
-                    contract.on('Respuesta', (requestId, department) => {
-                        if (requestId === tx.hash) {
-                            resultDiv.textContent = 'Department: ' + department;
-                        }
-                    });
-                } catch (error) {
-                    console.error(error);
-                    resultDiv.textContent = 'Error sending request';
+            sendButton.addEventListener('click', async () => {
+                if (contract) {
+                    try {
+                        const subscriptionId = subscriptionIdInput.value;
+                        const args = argsInput.value.split(',');
+                        const tx = await contract.enviarSolicitud(subscriptionId, args);
+                        await tx.wait();
+                        alert('Solicitud enviada con éxito!');
+                    } catch (error) {
+                        console.error(error);
+                        alert('Error al enviar la solicitud');
+                    }
+                } else {
+                    alert('Conecta tu billetera primero');
                 }
-            } else {
-                resultDiv.textContent = 'Connect your wallet first';
-            }
-        });
-    </script>
+            });
 
+            queryButton.addEventListener('click', async () => {
+                if (contract) {
+                    try {
+                        const department = await contract.department();
+                        departmentResult.textContent = `Departamento: ${department}`;
+                    } catch (error) {
+                        console.error(error);
+                        alert('Error al consultar el departamento');
+                    }
+                } else {
+                    alert('Conecta tu billetera primero');
+                }
+            });
+        </script>
+
+    </div>
 </body>
 </html>
