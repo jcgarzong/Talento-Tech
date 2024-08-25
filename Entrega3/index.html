@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Usuarios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+</head>
+<body class="bg-gray-900 text-white font-mono">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl text-pink-500 font-bold mb-4">Gestor de Usuarios</h1>
+
+        <button id="connectButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Conectar Billetera
+        </button>
+
+        <div id="walletAddress" class="mt-2"></div> <div class="mt-8">
+            <h2 class="text-xl text-cyan-400 font-bold mb-2">Registrar Usuario</h2>
+            <input type="text" id="addressInput" placeholder="Dirección del Usuario" class="bg-gray-800 border border-gray-700 rounded px-3 py-2 mb-2">
+            <input type="text" id="nameInput" placeholder="Nombre del Usuario" class="bg-gray-800 border border-gray-700 rounded px-3 py-2 mb-2">
+            <button id="registerButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                Registrar
+            </button>
+        </div>
+
+        <div class="mt-8">
+            <h2 class="text-xl text-cyan-400 font-bold mb-2">Eliminar Usuario</h2>
+            <input type="text" id="deleteAddressInput" placeholder="Dirección del Usuario" class="bg-gray-800 border border-gray-700 rounded px-3 py-2 mb-2">
+            <button id="deleteButton" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                Eliminar
+            </button>
+        </div>
+
+        <div class="mt-8">
+            <h2 class="text-xl text-cyan-400 font-bold mb-2">Obtener Nombre de Usuario</h2>
+            <input type="text" id="getAddressInput" placeholder="Dirección del Usuario" class="bg-gray-800 border border-gray-700 rounded px-3 py-2 mb-2">
+            <button id="getNameButton" class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
+                Obtener Nombre
+            </button>
+            <div id="userName" class="mt-2"></div>
+        </div>
+
+    </div>
+
+    <script>    
+        const contractAddress = "0xD138a31b129318001394f52b09690f188740d293";
+        const contractABI = [
+            {
+                "inputs": [],
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "inputs": [],
+                "name": "administrador",
+                "outputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_usuario",
+                        "type": "address"
+                    }
+                ],
+                "name": "eliminuarUsuario",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_usuario",
+                        "type": "address"
+                    }
+                ],
+                "name": "estaUsuarioRegistrado",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_usuario",
+                        "type": "address"
+                    }
+                ],
+                "name": "obtenerNombreRegistrado",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "",
+                        "type": "string"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_usuario",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "string",
+                        "name": "_nombre",
+                        "type": "string"
+                    }
+                ],
+                "name": "registrarUsuario",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
+        ];
+        
+        let provider;
+        let signer;
+        let contract;
+        
+        const connectButton = document.getElementById('connectButton');
+        const registerButton = document.getElementById('registerButton');
+        const deleteButton = document.getElementById('deleteButton');
+        const getNameButton = document.getElementById('getNameButton');
+        const addressInput = document.getElementById('addressInput');
+        const nameInput = document.getElementById('nameInput');
+        const deleteAddressInput = document.getElementById('deleteAddressInput');
+        const getAddressInput = document.getElementById('getAddressInput');
+        const userName = document.getElementById('userName');
+        const walletAddress = document.getElementById('walletAddress'); // Added this line
+
+        connectButton.addEventListener('click', async () => {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    // Solicitar acceso a la cuenta
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+                    // Obtener el proveedor y el firmante
+                    provider = new ethers.providers.Web3Provider(window.ethereum);
+                    signer = provider.getSigner();
+
+                    // Instanciar el contrato
+                    contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+                    // Mostrar la dirección de la billetera
+                    const address = await signer.getAddress();
+                    walletAddress.textContent = `Dirección de la billetera: ${address}`;
+
+                } catch (error) {
+                    console.error("Error al conectar a la billetera:", error);
+                    alert("Error al conectar a la billetera.");
+                }
+            } else {
+                alert("MetaMask no está instalado.");
+            }
+        });
+        
+        registerButton.addEventListener('click', async () => {
+        const address = addressInput.value;
+        const name = nameInput.value;
+        try {
+            const tx = await contract.registrarUsuario(address, name);
+            await tx.wait();
+            console.log('Usuario registrado:', address, name);
+        } catch (error) {
+            console.error('Error al registrar usuario:', error);
+        }
+        });
+        
+        deleteButton.addEventListener('click', async () => {
+        const address = deleteAddressInput.value;
+        try {
+            const tx = await contract.eliminuarUsuario(address);
+            await tx.wait();
+            console.log('Usuario eliminado:', address);
+        } catch (error) {
+            console.error('Error al eliminar usuario:', error);
+        }
+        });
+        
+        getNameButton.addEventListener('click', async () => {
+        const address = getAddressInput.value;
+        try {
+            const name = await contract.obtenerNombreRegistrado(address);
+            userName.textContent = `Nombre: ${name}`;
+        } catch (error) {
+            console.error('Error al obtener nombre de usuario:', error);
+        }
+        });
+    </script>
+</body>
+</html>
