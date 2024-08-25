@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactuar con Contrato Inteligente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+</head>
+
+<body class="bg-[#99CC66] text-gray-300 font-['Roboto Slab'] flex flex-col items-center justify-center min-h-screen">
+
+    <div class="container mx-auto p-4 rounded-lg bg-[#2D3748] shadow-md">
+        <h1 class="text-2xl font-bold mb-4 text-center">Interactuar con Contrato Inteligente</h1>
+
+        <button id="connectButton" class="bg-[#4A5568] hover:bg-[#38445C] text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4">
+            Conectar Billetera
+        </button>
+
+        <p id="walletAddress" class="text-center mb-4"></p>
+
+        <div class="mb-4">
+            <label for="textInput" class="block text-sm font-bold mb-2">Texto a Almacenar:</label>
+            <input type="text" id="textInput" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+        </div>
+
+        <button id="storeTextButton" class="bg-[#4A5568] hover:bg-[#38445C] text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4">
+            Almacenar Texto
+        </button>
+
+        <button id="readTextButton" class="bg-[#4A5568] hover:bg-[#38445C] text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4">
+            Leer Texto
+        </button>
+
+        <p id="contractText" class="text-center"></p>
+    </div>
+
+    <script>
+        const contractAddress = '0xBE73D75E5A75Bc6d8E118Cf05F5f1c9966ff7ceb';
+        const contractABI = [
+            {
+                "inputs": [
+                    {
+                        "internalType": "string",
+                        "name": "nuevoTexto",
+                        "type": "string"
+                    }
+                ],
+                "name": "almacenarTexto",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "inputs": [],
+                "name": "consultarTexto",
+                "outputs": [
+                    {
+                        "internalType": "string",
+                        "name": "",
+                        "type": "string"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "propietario",
+                "outputs": [
+                    {
+                        "internalType": "address",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        let provider;
+        let signer;
+        let contract;
+
+        const connectButton = document.getElementById('connectButton');
+        const walletAddress = document.getElementById('walletAddress');
+        const textInput = document.getElementById('textInput');
+        const storeTextButton = document.getElementById('storeTextButton');
+        const readTextButton = document.getElementById('readTextButton');
+        const contractText = document.getElementById('contractText');
+
+        connectButton.addEventListener('click', async () => {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    provider = new ethers.providers.Web3Provider(window.ethereum);
+                    signer = provider.getSigner();
+                    contract = new ethers.Contract(contractAddress, contractABI, signer);
+                    const address = await signer.getAddress();
+                    walletAddress.textContent = `Dirección de la billetera: ${address}`;
+                } catch (error) {
+                    console.error(error);
+                }
+            } else {
+                walletAddress.textContent = 'Por favor, instala MetaMask.';
+            }
+        });
+
+        storeTextButton.addEventListener('click', async () => {
+            const text = textInput.value;
+            if (text) {
+                try {
+                    const tx = await contract.almacenarTexto(text);
+                    await tx.wait();
+                    console.log('Texto almacenado:', text);
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+        });
+
+        readTextButton.addEventListener('click', async () => {
+            try {
+                const text = await contract.consultarTexto();
+                contractText.textContent = `Texto del contrato: ${text}`;
+            } catch (error) {
+                console.error(error);
+            }
+        });
+    </script>
+
+</body>
+
+</html>
