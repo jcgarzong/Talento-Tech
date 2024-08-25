@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Datos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+</head>
+<body class="bg-gray-900 text-white font-mono">
+    <div class="container mx-auto p-8">
+        <h1 class="text-3xl font-bold mb-6 text-cyan-400">Registro de Datos</h1>
+
+        <div class="mb-4">
+            <button id="connectButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Conectar Metamask
+            </button>
+            <span id="walletAddress" class="ml-2"></span>
+            <button id="disconnectButton" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded ml-2">
+                Desconectar
+            </button>
+        </div>
+
+        <div>
+            <h2 class="text-xl font-bold mb-2 text-pink-500">Registrar Dato</h2>
+            <input type="text" id="inputData" placeholder="Ingrese el dato" class="bg-gray-800 border border-gray-700 rounded px-3 py-2 mb-2">
+            <button id="registerButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                Registrar
+            </button>
+        </div>
+
+        <div>
+            <h2 class="text-xl font-bold mb-2 text-pink-500">Registros</h2>
+            <ul id="dataList" class="list-disc pl-5"></ul>
+        </div>
+    </div>
+    <script>
+
+        const contractAddress = "0x0a0d9d03940ea8b0356EaEfe0a3E28Ac3398032f";
+        const contractABI = [
+            {
+                "inputs": [
+                    {
+                        "internalType": "string",
+                        "name": "_dato",
+                        "type": "string"
+                    }
+                ],
+                "name": "registrarDato",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_direccionGestorUsuarios",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "inputs": [],
+                "name": "obtenerRegistros",
+                "outputs": [
+                    {
+                        "internalType": "string[]",
+                        "name": "",
+                        "type": "string[]"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ]
+
+        let provider;
+        let signer;
+        let contract;
+
+        const connectButton = document.getElementById('connectButton');
+        const disconnectButton = document.getElementById('disconnectButton');
+        const walletAddress = document.getElementById('walletAddress');
+
+        const registerButton = document.getElementById('registerButton');
+        const inputData = document.getElementById('inputData');
+
+        const dataList = document.getElementById('dataList');
+
+        connectButton.addEventListener('click', async () => {
+            if (window.ethereum) {
+                try {
+                    // Solicitar acceso a las cuentas
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+                    // Permitir al usuario seleccionar una cuenta (si hay varias)
+                    if (accounts.length > 1) {
+                        const selectedAccount = prompt("Selecciona una cuenta:", accounts[0]);
+                        if (!accounts.includes(selectedAccount)) {
+                            throw new Error("Cuenta no válida");
+                        }
+                        // Usar la cuenta seleccionada
+                        provider = new ethers.providers.Web3Provider(window.ethereum);
+                        signer = provider.getSigner(selectedAccount);
+                    } else {
+                        // Usar la única cuenta disponible
+                        provider = new ethers.providers.Web3Provider(window.ethereum);
+                        signer = provider.getSigner();
+                    }
+
+                    contract = new ethers.Contract(contractAddress, contractABI, provider);
+                    const address = await signer.getAddress();
+                    walletAddress.textContent = address;
+                    await updateDataList();
+                } catch (error) {
+                    console.error(error);
+                }
+            } else {
+                walletAddress.textContent = 'Instala MetaMask';
+            }
+        });
+
+        disconnectButton.addEventListener('click', async () => {
+            // No hay una forma directa de "desconectar" en MetaMask,
+            // pero podemos limpiar la información de la cuenta en nuestra aplicación
+            walletAddress.textContent = '';
+            provider = null;
+            signer = null;
+            contract = null;
+            });
+
+        registerButton.addEventListener('click', async () => {
+            const data = inputData.value;
+            try {
+                // Crea la transacción
+                const tx = await contract.populateTransaction.registrarDato(data);
+                // Envía la transacción y pide al usuario que la firme
+                const signedTx = await signer.sendTransaction(tx);
+                await signedTx.wait();
+                console.log('Dato registrado');
+                await updateDataList();
+            } catch (error) {
+                console.error(error);
+            }
+        });
+
+        async function updateDataList() {
+            try {
+                const data = await contract.obtenerRegistros();
+                dataList.innerHTML = '';
+                data.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = item;
+                    dataList.appendChild(li);
+                });
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+    </script>
+</body>
+</html>
