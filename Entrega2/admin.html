@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interfaz de Contrato Inteligente</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-[#ffeb3b] font-['Ubuntu'] text-blue-500 min-h-screen flex flex-col items-center justify-center">
+  <div class="container mx-auto p-4 rounded-lg shadow-md bg-[#607d8b]">
+    <h1 class="text-2xl font-bold mb-4 text-center">Interfaz de Contrato</h1>
+    <button id="connectButton" class="bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4">
+      Conectar Billetera
+    </button>
+    <p id="walletAddress" class="text-center mb-4"></p>
+
+    <div class="mb-4">
+      <label for="productName" class="block text-gray-700 text-sm font-bold mb-2">Nombre del Producto:</label>
+      <input type="text" id="productName" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+    </div>
+    <button id="registerButton" class="bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4">
+      Registrar Producto
+    </button>
+
+    <div class="mb-4">
+      <label for="productId" class="block text-gray-700 text-sm font-bold mb-2">ID del Producto:</label>
+      <input type="number" id="productId" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+    </div>
+    <div class="mb-4">
+      <label for="productLocation" class="block text-gray-700 text-sm font-bold mb-2">Ubicación del Producto:</label>
+      <input type="text" id="productLocation" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+    </div>
+    <button id="updateButton" class="bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline mb-4">
+      Actualizar Estado
+    </button>
+
+    <h2 class="text-xl font-bold mb-4 text-center">Inventario de Productos</h2>
+    <ul id="productList" class="list-disc list-inside"></ul>
+
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+    <script>
+      const contractAddress = "0xA4fa7a4f1E07928cC0F76f3d76b602B06f389Cc7";
+      const contractABI = [
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_idProducto",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "_ubicacion",
+				"type": "string"
+			}
+		],
+		"name": "actualizarEstado",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_nombre",
+				"type": "string"
+			}
+		],
+		"name": "registrarProducto",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "contadorProductos",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_idProducto",
+				"type": "uint256"
+			}
+		],
+		"name": "obtenerHistorial",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "ubicacion",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "marcaTiempo",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct TrazabilidadSimple.Estado[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "obtenerListaProductos",
+		"outputs": [
+			{
+				"internalType": "string[]",
+				"name": "",
+				"type": "string[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "productos",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "nombre",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
+
+      let provider;
+      let signer;
+      let contract;
+
+      const connectButton = document.getElementById('connectButton');
+      const walletAddress = document.getElementById('walletAddress');
+      const productNameInput = document.getElementById('productName');
+      const registerButton = document.getElementById('registerButton');
+      const productIdInput = document.getElementById('productId');
+      const productLocationInput = document.getElementById('productLocation');
+      const updateButton = document.getElementById('updateButton');
+      const productList = document.getElementById('productList');
+
+      connectButton.addEventListener('click', async () => {
+        if (typeof window.ethereum !== 'undefined') {
+          try {
+            await window.ethereum.request({ method: 'eth_requestAccounts' });
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+            signer = provider.getSigner();
+            contract = new ethers.Contract(contractAddress, contractABI, signer);
+            const address = await signer.getAddress();
+            walletAddress.textContent = `Dirección de la billetera: ${address}`;
+            await updateProductList();
+          } catch (error) {
+            console.error('Error al conectar la billetera:', error);
+          }
+        } else {
+          walletAddress.textContent = 'Por favor, instala MetaMask.';
+        }
+      });
+
+      registerButton.addEventListener('click', async () => {
+        const productName = productNameInput.value;
+        if (productName) {
+          try {
+            const tx = await contract.registrarProducto(productName);
+            await tx.wait();
+            productNameInput.value = '';
+            await updateProductList();
+          } catch (error) {
+            console.error('Error al registrar el producto:', error);
+          }
+        }
+      });
+
+      updateButton.addEventListener('click', async () => {
+        const productId = parseInt(productIdInput.value);
+        const productLocation = productLocationInput.value;
+        if (productId && productLocation) {
+          try {
+            const tx = await contract.actualizarEstado(productId, productLocation);
+            await tx.wait();
+            productIdInput.value = '';
+            productLocationInput.value = '';
+          } catch (error) {
+            console.error('Error al actualizar el estado del producto:', error);
+          }
+        }
+      });
+
+      async function updateProductList() {
+        try {
+          const productNames = await contract.obtenerListaProductos();
+          productList.innerHTML = '';
+          productNames.forEach((name, index) => {
+            const listItem = document.createElement('li');
+            listItem.textContent = `ID: ${index}, Nombre: ${name}`;
+            productList.appendChild(listItem);
+          });
+        } catch (error) {
+          console.error('Error al obtener la lista de productos:', error);
+        }
+      }
+    </script>
+  </div>
+</body>
+</html>
