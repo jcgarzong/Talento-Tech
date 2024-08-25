@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Datos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+</head>
+<body class="bg-gray-900 text-white font-mono">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl text-pink-500 font-bold mb-4">Registro de Datos</h1>
+
+        <button id="connectButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Conectar Metamask
+        </button>
+
+        <div class="mt-8">
+            <h2 class="text-xl text-cyan-400 font-bold mb-2">Registrar Dato</h2>
+            <input type="text" id="dataInput" placeholder="Dato a Registrar" class="bg-gray-800 border border-gray-700 rounded px-3 py-2 mb-2">
+            <button id="registerButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                Registrar
+            </button>
+        </div>
+
+        <div class="mt-8">
+            <h2 class="text-xl text-cyan-400 font-bold mb-2">Registros</h2>
+            <ul id="registrosList" class="list-disc list-inside">
+            </ul>
+        </div>
+
+    </div>
+    
+    <script>
+        const contractAddress = "0xc6C25C88B06C1e536F25f3219B1B87241f0e16F5";
+        const contractABI = [
+            {
+                "inputs": [
+                    {
+                        "internalType": "string",
+                        "name": "_dato",
+                        "type": "string"
+                    }
+                ],
+                "name": "registrarDato",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "_direccionGestorUsuarios",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "inputs": [],
+                "name": "obtenerRegistros",
+                "outputs": [
+                    {
+                        "internalType": "string[]",
+                        "name": "",
+                        "type": "string[]"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+        
+        let provider;
+        let signer;
+        let contract;
+        
+        const connectButton = document.getElementById('connectButton');
+        const registerButton = document.getElementById('registerButton');
+        const dataInput = document.getElementById('dataInput');
+        const registrosList = document.getElementById('registrosList');
+        
+        connectButton.addEventListener('click', async () => {
+        if (typeof window.ethereum !== 'undefined') {
+            try {
+            await window.ethereum.request({ method: 'eth_requestAccounts' });
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+            signer = provider.getSigner();
+            contract = new ethers.Contract(contractAddress, contractABI, signer);
+            connectButton.textContent = 'Conectado';
+            await mostrarRegistros();
+            } catch (error) {
+            console.error('Error al conectar a Metamask:', error);
+            }
+        } else {
+            console.error('Metamask no está instalado');
+        }
+        });
+        
+        registerButton.addEventListener('click', async () => {
+        const data = dataInput.value;
+        try {
+            const tx = await contract.registrarDato(data);
+            await tx.wait();
+            console.log('Dato registrado:', data);
+            await mostrarRegistros();
+        } catch (error) {
+            console.error('Error al registrar dato:', error);
+        }
+        });
+        
+        async function mostrarRegistros() {
+        try {
+            const registros = await contract.obtenerRegistros();
+            registrosList.innerHTML = '';
+            registros.forEach(registro => {
+            const li = document.createElement('li');
+            li.textContent = registro;
+            registrosList.appendChild(li);
+            });
+        } catch (error) {
+            console.error('Error al obtener registros:', error);
+        }
+        }
+    </script>
+</body>
+</html>
