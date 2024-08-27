@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interfaz de Contrato de Alquiler</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 font-ubuntu">
+
+  <div class="container mx-auto p-4">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Interfaz de Contrato de Alquiler</h1>
+
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <button id="connectButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+        Conectar a MetaMask
+      </button>
+      <p id="walletAddress" class="mt-2 text-gray-600"></p>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <h2 class="text-xl font-bold text-gray-800 mb-4">Crear Alquiler</h2>
+      <div class="mb-4">
+        <label for="inquilino" class="block text-gray-700 text-sm font-bold mb-2">Dirección del Inquilino:</label>
+        <input type="text" id="inquilino" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+      </div>
+      <div class="mb-4">
+        <label for="montoMensual" class="block text-gray-700 text-sm font-bold mb-2">Monto Mensual (Wei):</label>
+        <input type="number" id="montoMensual" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+      </div>
+      <div class="mb-4">
+        <label for="duracionMeses" class="block text-gray-700 text-sm font-bold mb-2">Duración (Meses):</label>
+        <input type="number" id="duracionMeses" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+      </div>
+      <div class="mb-4">
+        <label for="deposito" class="block text-gray-700 text-sm font-bold mb-2">Depósito (Wei):</label>
+        <input type="number" id="deposito" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+      </div>
+      <button id="crearAlquilerButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+        Crear Alquiler
+      </button>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <h2 class="text-xl font-bold text-gray-800 mb-4">Pagar Alquiler</h2>
+      <div class="mb-4">
+        <label for="idAlquilerPagar" class="block text-gray-700 text-sm font-bold mb-2">ID del Alquiler:</label>
+        <input type="number" id="idAlquilerPagar" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+      </div>
+      <button id="pagarAlquilerButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+        Pagar Alquiler
+      </button>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <h2 class="text-xl font-bold text-gray-800 mb-4">Finalizar Alquiler</h2>
+      <div class="mb-4">
+        <label for="idAlquilerFinalizar" class="block text-gray-700 text-sm font-bold mb-2">ID del Alquiler:</label>
+        <input type="number" id="idAlquilerFinalizar" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+      </div>
+      <button id="finalizarAlquilerButton" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+        Finalizar Alquiler
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const contractAddress = "0x8dC79F8857910015f31D21Ea5FBCc97Cf809c867";
+    const contractABI = [
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_inquilino",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_montoMensual",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_duracionMeses",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_deposito",
+				"type": "uint256"
+			}
+		],
+		"name": "crearAlquiler",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_idAlquiler",
+				"type": "uint256"
+			}
+		],
+		"name": "finalizarAlquiler",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "idAlquiler",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "propietario",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "inquilino",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "montoMensual",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "duracionMeses",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "fechaInicio",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "deposito",
+				"type": "uint256"
+			}
+		],
+		"name": "NuevoAlquiler",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_idAlquiler",
+				"type": "uint256"
+			}
+		],
+		"name": "pagarAlquiler",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "alquileres",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "propietario",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "inquilino",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "montoMensual",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "duracionMeses",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "fechaInicio",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "deposito",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "activo",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "proximoIdAlquiler",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
+
+    let provider;
+    let signer;
+    let contract;
+
+    const connectButton = document.getElementById('connectButton');
+    const walletAddress = document.getElementById('walletAddress');
+
+    const inquilinoInput = document.getElementById('inquilino');
+    const montoMensualInput = document.getElementById('montoMensual');
+    const duracionMesesInput = document.getElementById('duracionMeses');
+    const depositoInput = document.getElementById('deposito');
+    const crearAlquilerButton = document.getElementById('crearAlquilerButton');
+
+    const idAlquilerPagarInput = document.getElementById('idAlquilerPagar');
+    const pagarAlquilerButton = document.getElementById('pagarAlquilerButton');
+
+    const idAlquilerFinalizarInput = document.getElementById('idAlquilerFinalizar');
+    const finalizarAlquilerButton = document.getElementById('finalizarAlquilerButton');
+
+    connectButton.addEventListener('click', async () => {
+        if (typeof window.ethereum !== 'undefined') {
+            try {
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' }); // Corrección
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+            signer = provider.getSigner();
+            contract = new ethers.Contract(contractAddress, contractABI, signer);
+            const address = await signer.getAddress();
+            walletAddress.textContent = "Dirección de la billetera: " + address;
+            } catch (error) {
+            console.error(error);
+            alert("Error al conectar a MetaMask.");
+            }
+        } else {
+            alert("MetaMask no está instalado.");
+        }
+    });
+
+    crearAlquilerButton.addEventListener('click', async () => {
+      const inquilino = inquilinoInput.value;
+      const montoMensual = ethers.BigNumber.from(montoMensualInput.value);
+      const duracionMeses = ethers.BigNumber.from(duracionMesesInput.value);
+      const deposito = ethers.BigNumber.from(depositoInput.value);
+
+      try {
+        const tx = await contract.crearAlquiler(inquilino, montoMensual, duracionMeses, deposito);
+        await tx.wait();
+        console.log("Alquiler creado con éxito. Transacción:", tx.hash);
+        } 
+        catch (error) {
+        console.error(error);
+        alert("Error al crear el alquiler.");
+      }
+    });
+
+    pagarAlquilerButton.addEventListener('click', async () => {
+      const idAlquiler = ethers.BigNumber.from(idAlquilerPagarInput.value);
+
+      try {
+        const tx = await contract.pagarAlquiler(idAlquiler, { value: ethers.utils.parseEther("0,000000000000000001") }); // Asegúrate de especificar el valor correcto a pagar
+        await tx.wait();
+        console.log("Alquiler pagado con éxito. Transacción:", tx.hash);
+        // Puedes agregar aquí código para actualizar la UI o mostrar un mensaje de éxito.
+      } catch (error) {
+        console.error(error);
+        alert("Error al pagar el alquiler.");
+      }
+    });
+
+    finalizarAlquilerButton.addEventListener('click', async () => {
+      const idAlquiler = ethers.BigNumber.from(idAlquilerFinalizarInput.value);
+
+      try {
+        const tx = await contract.finalizarAlquiler(idAlquiler);
+        await tx.wait();
+        console.log("Alquiler finalizado con éxito. Transacción:", tx.hash);
+        // Puedes agregar aquí código para actualizar la UI o mostrar un mensaje de éxito.
+      } catch (error) {
+        console.error(error);
+        alert("Error al finalizar el alquiler.");
+      }
+    });
+
+  </script>
+</body>
+</html>
