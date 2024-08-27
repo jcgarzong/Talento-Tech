@@ -4,99 +4,97 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactuar con Contrato Inteligente</title>
-    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body class="bg-gray-100 font-ubuntu">
     <div class="container mx-auto px-4 py-8">
         <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Interactuar con Contrato Inteligente</h1>
 
-        <div class="bg-yellow-200 rounded-lg shadow-md p-6">
-            <div class="mb-4">
-                <button id="connectButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                    Conectar Billetera
-                </button>
-                <p id="walletAddress" class="mt-2 text-gray-600"></p>
-            </div>
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <button id="connectButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Conectar Billetera
+            </button>
+            <p id="walletAddress" class="mt-2 text-gray-600"></p>
 
-            <div class="mb-4">
+            <div class="mt-6">
                 <label for="documentHash" class="block text-gray-700 text-sm font-bold mb-2">Hash del Documento:</label>
-                <input type="text" id="documentHash" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                <input type="text" id="documentHash" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Ingrese el hash del documento">
             </div>
 
-            <div class="mb-4">
+            <div class="mt-6 flex space-x-4">
                 <button id="registerButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
                     Registrar Hash
                 </button>
-                <button id="verifyButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ml-4">
+                <button id="verifyButton" class="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
                     Verificar Hash
                 </button>
             </div>
 
-            <p id="result" class="text-gray-600"></p>
+            <p id="result" class="mt-4 text-gray-600"></p>
         </div>
     </div>
 
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
     <script>
-        const contractAddress = "0xBE73D75E5A75Bc6d8E118Cf05F5f1c9966ff7ceb";
+        const contractAddress = "0x429026D8294c92c62976dDe902edeB6d650c3467";
         const contractABI = [
-            {
-                "inputs": [
-                    {
-                        "internalType": "bytes32",
-                        "name": "_documentHash",
-                        "type": "bytes32"
-                    }
-                ],
-                "name": "registerDocumentHash",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "bytes32",
-                        "name": "",
-                        "type": "bytes32"
-                    }
-                ],
-                "name": "documentHashes",
-                "outputs": [
-                    {
-                        "internalType": "bool",
-                        "name": "",
-                        "type": "bool"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "bytes32",
-                        "name": "_documentHash",
-                        "type": "bytes32"
-                    }
-                ],
-                "name": "verifyDocumentHash",
-                "outputs": [
-                    {
-                        "internalType": "bool",
-                        "name": "",
-                        "type": "bool"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            }
-        ];
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_documentHash",
+				"type": "uint256"
+			}
+		],
+		"name": "registerDocumentHash",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "documentHashes",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_documentHash",
+				"type": "uint256"
+			}
+		],
+		"name": "verifyDocumentHash",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
 
-        let provider, signer, contract;
+        let provider;
+        let signer;
+        let contract;
 
         const connectButton = document.getElementById('connectButton');
         const walletAddress = document.getElementById('walletAddress');
@@ -116,45 +114,37 @@
                     walletAddress.textContent = `Dirección de la billetera: ${address}`;
                 } catch (error) {
                     console.error(error);
-                    result.textContent = "Error al conectar la billetera.";
+                    result.textContent = 'Error al conectar la billetera.';
                 }
             } else {
-                result.textContent = "Instala MetaMask para interactuar con la DApp.";
+                result.textContent = 'Por favor, instala MetaMask.';
             }
         });
-
-        // ... (código anterior)
 
         registerButton.addEventListener('click', async () => {
             const documentHash = documentHashInput.value;
             try {
-                // Convertir el hash a bytes32
-                const bytes32Hash = ethers.utils.formatBytes32String(documentHash);
-                console.log("bytes32Hash:", bytes32Hash); // Imprimir para depurar
-                const tx = await contract.registerDocumentHash(bytes32Hash);
+                // Corrección: Enviar la transacción
+                const tx = await contract.registerDocumentHash(documentHash);
+                // Esperar a que la transacción sea minada
                 await tx.wait();
-                result.textContent = `Hash registrado con éxito: ${documentHash}`;
+                result.textContent = `Hash registrado con éxito. Tx Hash: ${tx.hash}`;
             } catch (error) {
                 console.error(error);
-                result.textContent = "Error al registrar el hash.";
+                result.textContent = 'Error al registrar el hash.';
             }
-        });
+            });
 
         verifyButton.addEventListener('click', async () => {
             const documentHash = documentHashInput.value;
             try {
-                // Convertir el hash a bytes32
-                const bytes32Hash = ethers.utils.formatBytes32String(documentHash);
-                console.log("bytes32Hash:", bytes32Hash); // Imprimir para depurar
-                const isRegistered = await contract.verifyDocumentHash(bytes32Hash);
-                result.textContent = `Hash registrado: ${isRegistered}`;
+                const isRegistered = await contract.verifyDocumentHash(documentHash);
+                result.textContent = isRegistered ? 'El hash está registrado.' : 'El hash no está registrado.';
             } catch (error) {
                 console.error(error);
-                result.textContent = "Error al verificar el hash.";
+                result.textContent = 'Error al verificar el hash.';
             }
         });
-
-// ... (resto del código)
     </script>
 </body>
 </html>
