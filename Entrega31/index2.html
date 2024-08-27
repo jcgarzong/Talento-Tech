@@ -3,164 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Datos</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+    <title>Cyberpunk DApp</title>
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js" type="text/javascript"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-900 text-white font-mono">
     <div class="container mx-auto p-8">
-        <h1 class="text-3xl font-bold mb-6 text-cyan-400">Registro de Datos</h1>
+        <h1 class="text-3xl font-bold text-cyan-400 mb-4">User Data Registrar</h1>
+
+        <div id="wallet-info" class="flex justify-between items-center mb-4">
+            <button id="connect-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Connect Wallet
+            </button>
+            <span id="wallet-address" class="text-gray-400"></span>
+        </div>
 
         <div class="mb-4">
-            <button id="connectButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                Conectar Metamask
-            </button>
-            <span id="walletAddress" class="ml-2"></span>
-            <button id="disconnectButton" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded ml-2">
-                Desconectar
-            </button>
+            <input type="text" id="data-input" class="bg-gray-800 border border-gray-700 rounded py-2 px-4 w-full" placeholder="Enter data to register">
         </div>
 
-        <div>
-            <h2 class="text-xl font-bold mb-2 text-pink-500">Registrar Dato</h2>
-            <input type="text" id="inputData" placeholder="Ingrese el dato" class="bg-gray-800 border border-gray-700 rounded px-3 py-2 mb-2">
-            <button id="registerButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                Registrar
-            </button>
-        </div>
+        <button id="register-button" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+            Register Data
+        </button>
 
-        <div>
-            <h2 class="text-xl font-bold mb-2 text-pink-500">Registros</h2>
-            <ul id="dataList" class="list-disc pl-5"></ul>
+        <div id="data-list" class="mt-8">
+            <h2 class="text-xl font-bold text-yellow-400 mb-2">Registered Data:</h2>
+            <ul class="list-disc list-inside pl-4">
+                <!-- Data will be loaded here -->
+            </ul>
         </div>
     </div>
+
     <script>
-
-        const contractAddress = "0x0a0d9d03940ea8b0356EaEfe0a3E28Ac3398032f";
+        const contractAddress = '0x8dC79F8857910015f31D21Ea5FBCc97Cf809c867';
         const contractABI = [
-            {
-                "inputs": [
-                    {
-                        "internalType": "string",
-                        "name": "_dato",
-                        "type": "string"
-                    }
-                ],
-                "name": "registrarDato",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "address",
-                        "name": "_direccionGestorUsuarios",
-                        "type": "address"
-                    }
-                ],
-                "stateMutability": "nonpayable",
-                "type": "constructor"
-            },
-            {
-                "inputs": [],
-                "name": "obtenerRegistros",
-                "outputs": [
-                    {
-                        "internalType": "string[]",
-                        "name": "",
-                        "type": "string[]"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            }
-        ]
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_direccionGestorUsuarios",
+				"type": "address"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"inputs": [],
+		"name": "obtenerRegistros",
+		"outputs": [
+			{
+				"internalType": "string[]",
+				"name": "",
+				"type": "string[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_dato",
+				"type": "string"
+			}
+		],
+		"name": "registrarDato",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	}
+];
 
-        let provider;
-        let signer;
-        let contract;
+        let provider, signer, contract;
 
-        const connectButton = document.getElementById('connectButton');
-        const disconnectButton = document.getElementById('disconnectButton');
-        const walletAddress = document.getElementById('walletAddress');
+        const connectButton = document.getElementById('connect-button');
+        const walletAddressSpan = document.getElementById('wallet-address');
+        const dataInput = document.getElementById('data-input');
+        const registerButton = document.getElementById('register-button');
+        const dataList = document.getElementById('data-list').querySelector('ul');
 
-        const registerButton = document.getElementById('registerButton');
-        const inputData = document.getElementById('inputData');
-
-        const dataList = document.getElementById('dataList');
-
-        connectButton.addEventListener('click', async () => {
+        window.addEventListener('load', async () => {
             if (window.ethereum) {
-                try {
-                    // Solicitar acceso a las cuentas
-                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                provider = new ethers.providers.Web3Provider(window.ethereum);
 
-                    // Permitir al usuario seleccionar una cuenta (si hay varias)
-                    if (accounts.length > 1) {
-                        const selectedAccount = prompt("Selecciona una cuenta:", accounts[0]);
-                        if (!accounts.includes(selectedAccount)) {
-                            throw new Error("Cuenta no válida");
-                        }
-                        // Usar la cuenta seleccionada
-                        provider = new ethers.providers.Web3Provider(window.ethereum);
-                        signer = provider.getSigner(selectedAccount);
-                    } else {
-                        // Usar la única cuenta disponible
-                        provider = new ethers.providers.Web3Provider(window.ethereum);
-                        signer = provider.getSigner();
+                connectButton.addEventListener('click', async () => {
+                    try {
+                        await window.ethereum.request({ method: 'eth_requestAccounts' });
+                        await setupContract();
+                        await updateUI();
+                    } catch (error) {
+                        console.error('Error connecting to wallet:', error);
                     }
+                });
 
-                    contract = new ethers.Contract(contractAddress, contractABI, provider);
-                    const address = await signer.getAddress();
-                    walletAddress.textContent = address;
-                    await updateDataList();
-                } catch (error) {
-                    console.error(error);
+                // Check if already connected
+                if (window.ethereum.selectedAddress) {
+                    await setupContract();
+                    await updateUI();
                 }
             } else {
-                walletAddress.textContent = 'Instala MetaMask';
+                console.error('MetaMask not detected!');
             }
         });
 
-        disconnectButton.addEventListener('click', async () => {
-            // No hay una forma directa de "desconectar" en MetaMask,
-            // pero podemos limpiar la información de la cuenta en nuestra aplicación
-            walletAddress.textContent = '';
-            provider = null;
-            signer = null;
-            contract = null;
-            });
+        async function setupContract() {
+            signer = provider.getSigner();
+            contract = new ethers.Contract(contractAddress, contractABI, signer);
+        }
 
-        registerButton.addEventListener('click', async () => {
-            const data = inputData.value;
-            try {
-                // Crea la transacción
-                const tx = await contract.populateTransaction.registrarDato(data);
-                // Envía la transacción y pide al usuario que la firme
-                const signedTx = await signer.sendTransaction(tx);
-                await signedTx.wait();
-                console.log('Dato registrado');
-                await updateDataList();
-            } catch (error) {
-                console.error(error);
-            }
-        });
+        async function updateUI() {
+            const accounts = await provider.send('eth_requestAccounts', []);
+            if (accounts.length > 0) {
+                walletAddressSpan.textContent = accounts[0];
 
-        async function updateDataList() {
-            try {
-                const data = await contract.obtenerRegistros();
-                dataList.innerHTML = '';
-                data.forEach(item => {
-                    const li = document.createElement('li');
-                    li.textContent = item;
-                    dataList.appendChild(li);
+                registerButton.addEventListener('click', async () => {
+                    const data = dataInput.value;
+                    if (data) {
+                        try {
+                            const tx = await contract.registrarDato(data);
+                            await tx.wait();
+                            console.log('Data registered:', data);
+                            dataInput.value = '';
+                            loadData();
+                        } catch (error) {
+                            console.error('Error registering data:', error);
+                        }
+                    }
                 });
-            } catch (error) {
-                console.error(error);
+
+                loadData();
+            } else {
+                walletAddressSpan.textContent = 'Not Connected';
             }
         }
 
+        async function loadData() {
+            dataList.innerHTML = ''; // Clear previous data
+
+            try {
+                const data = await contract.obtenerRegistros();
+                data.forEach(item => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = item;
+                    dataList.appendChild(listItem);
+                });
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
     </script>
 </body>
 </html>
