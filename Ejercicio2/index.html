@@ -258,7 +258,7 @@
     connectButton.addEventListener('click', async () => {
         if (typeof window.ethereum !== 'undefined') {
             try {
-            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' }); // Corrección
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
             provider = new ethers.providers.Web3Provider(window.ethereum);
             signer = provider.getSigner();
             contract = new ethers.Contract(contractAddress, contractABI, signer);
@@ -294,10 +294,12 @@
       const idAlquiler = ethers.BigNumber.from(idAlquilerPagarInput.value);
 
       try {
-        const tx = await contract.pagarAlquiler(idAlquiler, { value: ethers.utils.parseEther("0,000000000000000001") }); // Asegúrate de especificar el valor correcto a pagar
+        const tx = await contract.pagarAlquiler(idAlquiler, {
+          value: ethers.BigNumber.from(montoMensualInput.value), 
+          gasLimit: 300000 
+        });
         await tx.wait();
         console.log("Alquiler pagado con éxito. Transacción:", tx.hash);
-        // Puedes agregar aquí código para actualizar la UI o mostrar un mensaje de éxito.
       } catch (error) {
         console.error(error);
         alert("Error al pagar el alquiler.");
@@ -311,7 +313,6 @@
         const tx = await contract.finalizarAlquiler(idAlquiler);
         await tx.wait();
         console.log("Alquiler finalizado con éxito. Transacción:", tx.hash);
-        // Puedes agregar aquí código para actualizar la UI o mostrar un mensaje de éxito.
       } catch (error) {
         console.error(error);
         alert("Error al finalizar el alquiler.");
